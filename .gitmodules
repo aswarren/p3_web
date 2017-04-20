@@ -62,3 +62,6 @@
 [submodule "public/js/autotrack"]
 	path = public/js/autotrack
 	url = https://github.com/googleanalytics/autotrack.git
+[submodule "public/js/pangenome_graphs"]
+	path = public/js/pangenome_graphs
+	url = https://github.com/aswarren/pangenome_graphs.git
