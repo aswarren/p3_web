@@ -385,7 +385,8 @@ define([
                     "gene,product,figfam_id,plfam_id,pgfam_id,go,ec,pathway)&sort(+genome_id,+sequence_id,+start)";
                 
                 console.log("Panaconda! ", q)
-                return when(window.App.api.data("panaconda", [q,"patric_pgfam"]), lang.hitch(this, function(res){
+                this.mapButton.style.display="none";
+                return when(window.App.api.data("panaconda", [q,this.alpha, this.ksize, this.context, this.diversity]), lang.hitch(this, function(res){
                     console.log("Panaconda Results: ");
                     x=(new window.DOMParser());
                     res=x.parseFromString(res.graph, "text/xml");

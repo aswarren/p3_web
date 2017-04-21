@@ -66,8 +66,47 @@
                     </div>
                 </div>
                 <div class="appRow">
+                    <div class="appRowSegment" style="text-align:left;margin:0 0 0 0">
+                            <label class="paramlabel">Color by</label><br>
+                            <select data-dojo-type="dijit/form/Select" name="diversity" data-dojo-attach-point="diversity"
+                            style="width:300px" required="false"
+                            data-dojo-props="intermediateChanges:true,missingMessage:'Name Must be provided for Folder',trim:true,placeHolder:'MySubFolder'">
+                                <option value="Species">Species</option>
+                                <option value="Genus">Genus</option>
+                        </select>
+                    </div>
+                    <div class="appRowSegment" style="text-align:left;margin:0 0 0 0">
+                        <label class="paramlabel">Family Type</label><br>
+                            <select data-dojo-type="dijit/form/Select" name="alpha" data-dojo-attach-point="alpha"
+                            style="width:300px" required="false"
+                            data-dojo-props="intermediateChanges:true,missingMessage:'Name Must be provided for Folder',trim:true,placeHolder:'MySubFolder'">
+                                <option value="patric_pgfam">PG-Fam</option>
+                                <option value="patric_pgfam">PL-Fam</option>
+                                <option value="patric_figfam">FigFam</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="appRow" style="margin:0 0 0 0">
+                    <div class="appRowSegment" style="text-align:left;margin:0 0 0 0">
+                        <label class="paramlabel">k-length</label><br>
+                        <div class="insertspinner" name="min_contig_len"
+                                data-dojo-type="dijit/form/NumberSpinner"
+                                data-dojo-attach-point="ksize"
+                                data-dojo-props="value:3, smallDelta:1, constraints:{min:3,max:9,places:0}"></div>
+                    </div>
+                    <div class="appRowSegment" style="text-align:left;margin:10px 0 0 0">
+                        <label  class="paramlabel">Context</label><br>
+                        <select data-dojo-type="dijit/form/Select" name="context" data-dojo-attach-point="context"
+                                style="width:100px" required="false"
+                                data-dojo-props="intermediateChanges:true,missingMessage:'Name Must be provided for Folder',trim:true,placeHolder:'MySubFolder'">
+                            <option value="genome">Genome</option>
+                            <option value="sequence">Sequence</option>
+                            <option value="feature">Feature</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="appRow">
                     <label>Add Genomes To Compare</label></br>
-                    <label>Select genome</label></br>
                     <div style="width:85%;display:inline-block;"
                             data-dojo-type="p3/widget/GenomeNameSelector" name="comp_genome_id" maxHeight=200
                             required="false" data-dojo-attach-point="comp_genome_id"
