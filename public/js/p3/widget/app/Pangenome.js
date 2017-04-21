@@ -386,7 +386,7 @@ define([
                 
                 console.log("Panaconda! ", q)
                 this.mapButton.style.display="none";
-                return when(window.App.api.data("panaconda", [q,this.alpha, this.ksize, this.context, this.diversity]), lang.hitch(this, function(res){
+                return when(window.App.api.data("panaconda", [q,this.alpha.value, this.ksize.value, this.context.value, this.diversity.value]), lang.hitch(this, function(res){
                     console.log("Panaconda Results: ");
                     x=(new window.DOMParser());
                     res=x.parseFromString(res.graph, "text/xml");
