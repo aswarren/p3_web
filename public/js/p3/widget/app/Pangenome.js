@@ -3,14 +3,15 @@ define([
 	"dojo/dom-class", "dijit/_TemplatedMixin", "dijit/_WidgetsInTemplateMixin",
 	"dojo/text!./templates/Pangenome.html", "dijit/form/Form", "../../util/PathJoin",
 	"dojo/request", "../viewer/IDMappingApp", "../../WorkspaceManager", "../WorkspaceObjectSelector",
-    "dojo/query", "dojo/_base/lang", "dijit/Tooltip", "dijit/popup", "dojo/dom-construct"
+    "dojo/query", "dojo/_base/lang", "dijit/Tooltip", "dijit/popup", "dojo/dom-construct",
+    "dojo/when"
 
 ], function(declare, WidgetBase, on,
 			domClass, Templated, WidgetsInTemplate,
 			Template, FormMixin, PathJoin,
 			xhr, ResultContainer, WorkspaceManager, 
             WorkspaceObjectSelector,query,lang,
-            Tooltip, popup, domConstruct){
+            Tooltip, popup, domConstruct, when){
 	return declare([WidgetBase, FormMixin, Templated, WidgetsInTemplate], {
 		"baseClass": "Pangenome",
 		applicationName: "Pangenome",
@@ -351,7 +352,9 @@ define([
 
 		constructGraph: function(){
 			console.log("constructGraph");
-            //and(ne(feature_type,source),eq(annotation,PATRIC),in(genome_id,(1151215.3,1169664.3,656404.3)))&limit(2500000)&sort(+genome_id,+sequence_id,+start)&http_accept=text/tsv
+            //and(ne(feature_type,source),eq(annotation,PATRIC),in(genome_id,(1151215.3,1169664.3,656404.3)))&limit(2500000)&select(genome_id,
+            //genome_name,accession,annotation,feature_type,patric_id,refseq_locus_tag,alt_locus_tag,uniprotkb_accession,start,end,strand,
+            //na_length,gene,product,figfam_id,plfam_id,pgfam_id,go,ec,pathway)&sort(+genome_id,+sequence_id,+start)&http_accept=text/tsv
             //https://www.patricbrc.org/api/genome_feature/?and(ne(feature_type,source),eq(sequence_id,NC_008268))&sort(+genome_id,+sequence_id,+start)&http_accept=text/tsv
             //handle async
             this.submission = true;
@@ -361,7 +364,7 @@ define([
             }
             else {
                 this.getValues();
-                checkSubmit();
+                this.checkSubmit();
             }
         },
 
@@ -376,11 +379,16 @@ define([
 
             if (this.final_gids.length >0){
 
-                var q="and(ne(feature_type,source),eq(annotation,PATRIC),in(genome_id,("+this.final_gids.join(",")+")))&limit(2500000)&sort(+genome_id,+sequence_id,+start)";
+                var q="and(ne(feature_type,source),eq(annotation,PATRIC),in(genome_id,("+this.final_gids.join(",")+
+                    ")))&limit(2500000)&select(genome_id,genome_name,accession,annotation,feature_type,"+
+                    "patric_id,refseq_locus_tag,alt_locus_tag,uniprotkb_accession,start,end,strand,na_length,"+
+                    "gene,product,figfam_id,plfam_id,pgfam_id,go,ec,pathway)&sort(+genome_id,+sequence_id,+start)";
                 
                 console.log("Panaconda! ", q)
-                return when(window.App.api.data("panaconda", [q]), lang.hitch(this, function(res){
+                return when(window.App.api.data("panaconda", [q,"patric_pgfam"]), lang.hitch(this, function(res){
                     console.log("Panaconda Results: ");
+                    x=(new window.DOMParser());
+                    res=x.parseFromString(res.graph, "text/xml");
                     this.set('data', res);
                 }))
             }
