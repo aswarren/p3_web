@@ -23,6 +23,14 @@ define([
         defaultPath: "",
 		startingRows: 10,
 		maxGenomes: 400,
+        data: null,
+	    genomeToAttachPt: ["comp_genome_id"],
+        genomeGroupToAttachPt: ["user_genome_group"],
+        addedGenomes: 0,
+        groupsRemaining: 0,
+        totalGroups: 0,
+        final_gids:[],
+        submission:false,
 
 		startup: function(){
             _self=this;
@@ -36,13 +44,15 @@ define([
 				id: this.id + "_idmapResult",
 				style: "min-height: 700px; visibility:hidden;"
 			});
-			this.result.placeAt(this.idmap_result_div);
+			this.result.placeAt(this.map_result_div);
 			this.result.startup();
             
 
-			this.numref = 0;
 			this.emptyTable(this.genomeTable, this.startingRows);
 			this.numgenomes.startup();
+            this.map_result_div.style.display="none";
+			this.watch("data", lang.hitch(this, "onSetData"));
+			this.watch("groupsRemaining", lang.hitch(this, "checkSubmit"));
         },
 
 
@@ -73,6 +83,12 @@ define([
 			*/
 			return true;
 		},
+		
+        onSetData: function(attr, oldVal, data){
+            this.appSubmitForm.style.display="none";
+            this.map_result_div.style.display="block";
+            startGraphViewer(data);
+		},
 
 		onChange: function(){
 			console.log("onChangeType: ", this.leftTypeSelect.get('value'), this.rightTypeSelect.get('value'));
@@ -99,31 +115,13 @@ define([
 				var cur_value = null;
 				var incomplete = 0;
 				var browser_select = 0;
-				if(attachname == "output_path" || attachname == "ref_user_genomes_fasta" || attachname == "ref_user_genomes_featuregroup"){
-					cur_value = this[attachname].searchBox.value;//? "/_uuid/"+this[attachname].searchBox.value : "";
-					browser_select = 1;
-				}
-				else if(attachname == "user_genomes_fasta"){
+				if(attachname == "user_genome_group"){
 					cur_value = this[attachname].searchBox.value;//? "/_uuid/"+this[attachname].searchBox.value : "";
 					var compGenomeList = query(".genomedata");
 					var genomeIds = [];
 
 					compGenomeList.forEach(function(item){
-						genomeIds.push(item.genomeRecord.user_genomes_fasta)
-					});
-
-					if(genomeIds.length > 0 && genomeIds.indexOf(cur_value) > -1)  // no same genome ids are allowed
-					{
-						success = 0;
-					}
-				}
-				else if(attachname == "user_genomes_featuregroup"){
-					cur_value = this[attachname].searchBox.value;//? "/_uuid/"+this[attachname].searchBox.value : "";
-					var compGenomeList = query(".genomedata");
-					var genomeIds = [];
-
-					compGenomeList.forEach(function(item){
-						genomeIds.push(item.genomeRecord.user_genomes_featuregroup)
+						genomeIds.push(item.genomeRecord.user_genome_group)
 					});
 
 					if(genomeIds.length > 0 && genomeIds.indexOf(cur_value) > -1)  // no same genome ids are allowed
@@ -184,19 +182,10 @@ define([
 		},
 		
         
-        onSuggestNameChange: function(){
-			if (this.ref_genome_id.get('value') || this.ref_user_genomes_featuregroup.get('value')) {
-				this.numref = 1;
-			} else {
-				this.numref = 0;			
-			}
-			//console.log("change genome name, this.numref=", this.numref, "this.ref_genome_id.get('value')=", this.ref_genome_id.get('value'));
-		},
-
 		onAddGenomeGroup: function(){
 			console.log("Create New Row", domConstruct);
 			var lrec = {};
-			var chkPassed = this.ingestAttachPoints(this.featureGroupToAttachPt, lrec);
+			var chkPassed = this.ingestAttachPoints(this.genomeGroupToAttachPt, lrec);
 			//console.log("this.featureGroupToAttachPt = " + this.featureGroupToAttachPt);
 			//console.log("chkPassed = " + chkPassed + " lrec = " + lrec);
 			if(chkPassed && this.addedGenomes < this.maxGenomes){
@@ -212,6 +201,7 @@ define([
 				var handle = on(td2, "click", lang.hitch(this, function(evt){
 					console.log("Delete Row");
 					domConstruct.destroy(tr);
+                    this.totalGroups-=1;
 					this.decreaseGenome();
 					if(this.addedGenomes < this.startingRows){
 						var ntr = this.genomeTable.insertRow(-1);
@@ -221,11 +211,109 @@ define([
 					}
 					handle.remove();
 				}));
+                this.totalGroups+=1;
 				this.increaseGenome();
 			}
 			//console.log(lrec);
 		},
+		makeFeatureGroupName: function(){
+			var name = this.user_genome_group.searchBox.get("displayedValue");
+			var maxName = 36;
+			var display_name = name;
+			//console.log("this.user_genomes_featuregroup name = " + this.name);
 
+			if(name.length > maxName){
+				display_name = name.substr(0, (maxName / 2) - 2) + "..." + name.substr((name.length - (maxName / 2)) + 2);
+			}
+			return display_name;
+		},
+
+
+
+		increaseGenome: function(){
+			this.addedGenomes = this.addedGenomes + 1;
+			this.numgenomes.set('value', Number(this.addedGenomes));
+
+		},
+		decreaseGenome: function(){
+			this.addedGenomes = this.addedGenomes - 1;
+			this.numgenomes.set('value', Number(this.addedGenomes));
+		},
+		makeGenomeName: function(){
+			var name = this.comp_genome_id.get("displayedValue");
+			var maxName = 36;
+			var display_name = name;
+			if(name.length > maxName){
+				display_name = name.substr(0, (maxName / 2) - 2) + "..." + name.substr((name.length - (maxName / 2)) + 2);
+			}
+
+			return display_name;
+		},
+
+		getValues: function(){
+            _self=this;
+			var values = this.inherited(arguments);
+			var compGenomeList = query(".genomedata");
+			var genomeIds = [];
+			var userGenomes = [];
+			var featureGroups = [];
+			var refType = "";
+			var refIndex = 0;
+
+			/*else if(values["ref_user_genomes_featuregroup"]){
+				refType = "ref_user_genomes_featuregroup";
+				featureGroups.push(values["ref_user_genomes_featuregroup"]);
+			}*/
+
+            //synchronous loop
+			compGenomeList.forEach(lang.hitch(this, function(item){
+				if(item.genomeRecord.comp_genome_id){
+					this.final_gids.push(item.genomeRecord.comp_genome_id);
+				}
+			}));
+            //asynchronous loop
+			compGenomeList.forEach(lang.hitch(this, function(item){
+				if(item.genomeRecord.user_genome_group){
+                    var path = item.genomeRecord.user_genome_group; //this.genome_group.get('value');
+                    // console.log("selGroup", path);
+                    if(path !== ''){
+                        WorkspaceManager.getObjects(path, false).then(lang.hitch(this, function(objs){
+                            var genomeIdHash = {};
+                            objs.forEach(function(obj){
+                                var data = JSON.parse(obj.data);
+                                data.id_list.genome_id.forEach(function(d){
+                                    if(!genomeIdHash.hasOwnProperty(d)){
+                                        genomeIdHash[d] = true;
+                                    }
+                                })
+                            });
+                            Object.keys(genomeIdHash).forEach(lang.hitch(this, function(v){this.final_gids.push(v)}));
+                            this.groupsRemaining-=1;
+                            this.checkSubmit();
+                        }));
+                    }
+				}
+			}));
+
+
+
+			//console.log("compGenomeList = " + compGenomeList);
+			//console.log("ref genome = " + values["ref_genome_id"]);
+
+			if(userGenomes.length > 0){
+				this.final_gids += userGenomes;
+			}
+
+			/*if(featureGroups.length > 0){
+				seqcomp_values["user_feature_groups"] = featureGroups;
+			}*/
+			
+            /*else if(refType == "ref_user_genomes_featuregroup"){
+				refIndex = genomeIds.length + userGenomes.length + 1;
+			}*/
+
+			return 0;
+		},
 
 		onAddGenome: function(){
 			//console.log("Create New Row", domConstruct);
@@ -260,9 +348,44 @@ define([
 			//console.log(lrec);
 		},
 
-		map: function(){
-			console.log("MAP: ", this.mapFromIDs, this.leftTypeSelect.get('value'), this.rightTypeSelect.get('value'));
-			var from = this.leftTypeSelect.get('value');
+
+		constructGraph: function(){
+			console.log("constructGraph");
+            //and(ne(feature_type,source),eq(annotation,PATRIC),in(genome_id,(1151215.3,1169664.3,656404.3)))&limit(2500000)&sort(+genome_id,+sequence_id,+start)&http_accept=text/tsv
+            //https://www.patricbrc.org/api/genome_feature/?and(ne(feature_type,source),eq(sequence_id,NC_008268))&sort(+genome_id,+sequence_id,+start)&http_accept=text/tsv
+            //handle async
+            this.submission = true;
+            if ( this.totalGroups > 0) {
+                this.groupsRemaining = this.totalGroups; 
+                this.getValues();
+            }
+            else {
+                this.getValues();
+                checkSubmit();
+            }
+        },
+
+
+        checkSubmit: function(){
+            if (this.groupsRemaining == 0 && this.submission){
+                this.requestGraph();
+            }
+        },
+
+		requestGraph: function(){
+
+            if (this.final_gids.length >0){
+
+                var q="and(ne(feature_type,source),eq(annotation,PATRIC),in(genome_id,("+this.final_gids.join(",")+")))&limit(2500000)&sort(+genome_id,+sequence_id,+start)";
+                
+                console.log("Panaconda! ", q)
+                return when(window.App.api.data("panaconda", [q]), lang.hitch(this, function(res){
+                    console.log("Panaconda Results: ");
+                    this.set('data', res);
+                }))
+            }
+            
+			/*var from = this.leftTypeSelect.get('value');
 			var to = this.rightTypeSelect.get('value');
             var via = "gene_id";
             via= this.joinUsing.get('value');
@@ -330,41 +453,7 @@ define([
 					}));
 					console.log("RES: ", res);
 				});
-			});
-		},
-
-		onChangeLeft: function(val){
-			console.log("VAL: ", val);
-			var ids = [];
-			var nsplit = val.split("\n");
-			nsplit.forEach(function(i){
-				var y = i.replace(/^\s+|\s+$/gm,'').split(/[\s,;\t]+/);
-				ids = ids.concat(y);
-			});
-			ids = ids.filter(function(id){
-				return !!id;
-			});
-
-			var m = {};
-			ids.forEach(function(id){
-				m[id] = true;
-			});
-			ids = Object.keys(m);
-
-			this.set("mapFromIDs", ids);
-
-			console.log("FromIDs: ", ids);
-
-			var dispVal = ids.join("\n");
-
-			if(this.leftList.get('value') != dispVal){
-			    this.onChange();
-				this.leftList.set('value', ids.join("\n"));
-			}
-		},
-
-		onChangeRight: function(val){
-			console.log("VAL: ", val);
+			});*/
 		}
 	});
 });
