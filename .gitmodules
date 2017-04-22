@@ -62,3 +62,7 @@
 [submodule "public/js/autotrack"]
 	path = public/js/autotrack
 	url = https://github.com/googleanalytics/autotrack.git
+[submodule "public/js/gexf-js"]
+	path = public/js/gexf-js
+	url = https://github.com/aswarren/gexf-js.git
+	branch = patric_links
