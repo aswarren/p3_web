@@ -1,48 +1,5 @@
-<form dojoAttachPoint="containerNode" class="PanelForm"
+<form dojoAttachPoint="containerNode" class="PanelForm App ${baseClass}"
     dojoAttachEvent="onreset:_onReset,onsubmit:_onSubmit,onchange:validate">
-    <div class="idmap_result_div" data-dojo-attach-point="map_result_div">
-
-        <div id="zonecentre" class="gradient">
-            <canvas id="carte" width="0" height="0"></canvas>
-            <ul id="ctlzoom">
-                <li>
-                    <a href="#" id="zoomPlusButton" title="S'approcher"> </a>
-                </li>
-                <li id="zoomSliderzone">
-                    <div id="zoomSlider"></div>
-                </li>
-                <li>
-                    <a href="#" id="zoomMinusButton" title="S'éloigner"> </a>
-                </li>
-                <li>
-                    <a href="#" id="lensButton"> </a>
-                </li>
-                <li>
-                    <a href="#" id="edgesButton"> </a>
-                </li>
-            </ul>
-        </div>
-        <div id="overviewzone" class="gradient">
-            <canvas id="overview" width="0" height="0"></canvas>
-        </div>
-    
-        <div id="leftcolumn">
-            <div id="unfold">
-                <a href="#" id="aUnfold" class="rightarrow"> </a>
-            </div>
-            <div id="leftcontent"></div>
-        </div>
-        <div id="titlebar">
-            <div id="maintitle">
-                <h1><a href="http://gephi.org/" target="_blank" title="Made with Gephi">Pan-genome Viewer</a></h1>
-            </div>
-            <input id="searchinput" class="grey" autocomplete="off" />
-            <input id="searchsubmit" type="submit" />
-        </div>
-        <ul id="autocomplete">
-        </ul>
-    </div>
-    <div class="appSubmitForm" dojoAttachPoint="appSubmitForm">
         <div class="appTemplate">
             <div class="appTitle">
                 <span class="breadcrumb">Services</span>
@@ -142,14 +99,24 @@
 
             </div>
 
+            <div class="appSubmissionArea">
+                <div data-dojo-attach-point="workingMessage" class="messageContainer workingMessage" style="margin-top:10px; text-align:center;">
+                    Submitting Annotation Job
+                </div>
+                <div data-dojo-attach-point="errorMessage" class="messageContainer errorMessage" style="margin-top:10px; text-align:center;">
+                    Error Submitting Job
+                </div>
+                <div data-dojo-attach-point="submittedMessage" class="messageContainer submittedMessage" style="margin-top:10px; text-align:center;">
+                    Annotation Job has been queued.
+                </div>
+                <div style="margin-top: 10px; text-align:center;">
+                    <div data-dojo-attach-point="cancelButton" data-dojo-attach-event="onClick:onCancel" data-dojo-type="dijit/form/Button">Cancel
+                    </div>
+                    <div data-dojo-attach-point="resetButton" type="reset" data-dojo-type="dijit/form/Button">Reset</div>
+                    <div data-dojo-attach-point="submitButton" type="submit" data-dojo-type="dijit/form/Button">Annotate</div>
+                </div>
+            </div>
         </div>
-        <div data-dojo-attach-point="msgVessel" style="text-align:center">
-        </div>
-        <div data-dojo-attach-point="btnContainer" style="text-align:center">
-            <div data-dojo-type="dijit/form/Button" data-dojo-attach-point="mapButton" data-dojo-attach-event="onClick:constructGraph" data-dojo-props="disabled:false">Submit</div>
-        </div>
-
-    </div>
     
 
 </form>
