@@ -1,25 +1,22 @@
 define([
 	"dojo/_base/declare", "dijit/_WidgetBase", "dojo/on",
-	"dojo/dom-class", "dijit/_TemplatedMixin", "dijit/_WidgetsInTemplateMixin",
-	"dojo/text!./templates/Pangenome.html", "dijit/form/Form", "../../util/PathJoin",
-	"dojo/request", "../viewer/IDMappingApp", "../../WorkspaceManager", "../WorkspaceObjectSelector",
+	"dojo/dom-class",
+	"dojo/text!./templates/SyntenyGraph.html", "../../util/PathJoin",
+	"dojo/request", "./AppBase", "../../WorkspaceManager", "../WorkspaceObjectSelector",
     "dojo/query", "dojo/_base/lang", "dijit/Tooltip", "dijit/popup", "dojo/dom-construct",
     "dojo/when"
 
 ], function(declare, WidgetBase, on,
-			domClass, Templated, WidgetsInTemplate,
-			Template, FormMixin, PathJoin,
-			xhr, ResultContainer, WorkspaceManager, 
+			domClass, 
+			Template, PathJoin,
+			xhr, AppBase, WorkspaceManager, 
             WorkspaceObjectSelector,query,lang,
             Tooltip, popup, domConstruct, when){
-	return declare([WidgetBase, FormMixin, Templated, WidgetsInTemplate], {
+	return declare([AppBase], {
 		"baseClass": "SyntenyGraph",
 		applicationName: "SyntenyGraph",
 		templateString: Template,
-		path: "",
-		mapFromIDs: null,
-		mapToIDs: null,
-        result_store: null,
+        requireAuth: true,
         result_grid: null,
         defaultPath: "",
 		startingRows: 10,
@@ -31,7 +28,7 @@ define([
         groupsRemaining: 0,
         totalGroups: 0,
         final_gids:[],
-        submission:false,
+        final_values:{},
 
 		startup: function(){
             _self=this;
@@ -40,20 +37,30 @@ define([
 			if(window.App.user){
 				_self.defaultPath = WorkspaceManager.getDefaultFolder() || this.activeWorkspacePath;
             }
+
+
+            if (this._started) {
+                return;
+            }
+            if (this.requireAuth && (window.App.authorizationToken === null || window.App.authorizationToken === undefined)) {
+                return;
+            }
+            this.inherited(arguments);
                 
-			this.result = new ResultContainer({
-				id: this.id + "_idmapResult",
-				style: "min-height: 700px; visibility:hidden;"
-			});
-			this.result.placeAt(this.map_result_div);
-			this.result.startup();
+			//this.result = new ResultContainer({
+			//	id: this.id + "_idmapResult",
+			//	style: "min-height: 700px; visibility:hidden;"
+			//});
+			//this.result.placeAt(this.map_result_div);
+			//this.result.startup();
             
 
 			this.emptyTable(this.genomeTable, this.startingRows);
 			this.numgenomes.startup();
-            this.map_result_div.style.display="none";
-			this.watch("data", lang.hitch(this, "onSetData"));
+            //this.map_result_div.style.display="none";
+			//this.watch("data", lang.hitch(this, "onSetData"));
 			this.watch("groupsRemaining", lang.hitch(this, "checkSubmit"));
+            this._started = true;
         },
 
 
@@ -71,19 +78,6 @@ define([
 
 		},
 
-		validate: function(){
-			/*
-			console.log("this.validate()",this);
-			var valid = this.inherited(arguments);
-			if (valid){
-				this.saveButton.set("disabled", false)
-			}else{
-				this.saveButton.set("disabled",true);
-			}
-			return valid;
-			*/
-			return true;
-		},
 		
         onSetData: function(attr, oldVal, data){
             this.appSubmitForm.style.display="none";
@@ -214,6 +208,7 @@ define([
 					handle.remove();
 				}));
                 this.totalGroups+=1;
+                this.getGListValues();
 				this.increaseGenome();
 			}
 			//console.log(lrec);
@@ -230,7 +225,12 @@ define([
 			return display_name;
 		},
 
-
+        processingGroup: function(){
+            this.workinggroup.set('value',Number(0));
+        },
+        finishedGroup: function(){
+            this.workinggroup.set('value',Number(1));
+        },
 
 		increaseGenome: function(){
 			this.addedGenomes = this.addedGenomes + 1;
@@ -252,9 +252,16 @@ define([
 			return display_name;
 		},
 
-		getValues: function(){
+        getValues:function(){
+			cur_values = this.inherited(arguments);
+            cur_values["gids"]=[];
+            Object.keys(this.genomeIdHash).forEach(lang.hitch(this, function(v){cur_values.gids.push(v)}));
+            return cur_values;
+        },
+
+		getGListValues: function(){
             _self=this;
-			var values = this.inherited(arguments);
+            this.genomeIdHash = {};
 			var compGenomeList = query(".genomedata");
 			var genomeIds = [];
 			var userGenomes = [];
@@ -268,43 +275,42 @@ define([
 			}*/
 
             //synchronous loop
+            genomeGroupPaths=[];
 			compGenomeList.forEach(lang.hitch(this, function(item){
 				if(item.genomeRecord.comp_genome_id){
-					this.final_gids.push(item.genomeRecord.comp_genome_id);
+                    this.genomeIdHash[item.genomeRecord.comp_genome_id] = true;
 				}
-			}));
-            //asynchronous loop
-			compGenomeList.forEach(lang.hitch(this, function(item){
 				if(item.genomeRecord.user_genome_group){
                     var path = item.genomeRecord.user_genome_group; //this.genome_group.get('value');
-                    // console.log("selGroup", path);
                     if(path !== ''){
-                        WorkspaceManager.getObjects(path, false).then(lang.hitch(this, function(objs){
-                            var genomeIdHash = {};
-                            objs.forEach(function(obj){
-                                var data = JSON.parse(obj.data);
-                                data.id_list.genome_id.forEach(function(d){
-                                    if(!genomeIdHash.hasOwnProperty(d)){
-                                        genomeIdHash[d] = true;
-                                    }
-                                })
-                            });
-                            Object.keys(genomeIdHash).forEach(lang.hitch(this, function(v){this.final_gids.push(v)}));
-                            this.groupsRemaining-=1;
-                            this.checkSubmit();
-                        }));
+                        genomeGroupPaths.push(path);
                     }
-				}
+                }
 			}));
+            if (genomeGroupPaths.length > 0){
+                this.processingGroup();
+                //asynchronous loop
+                WorkspaceManager.getObjects(genomeGroupPaths, false).then(lang.hitch(this, function(objs){
+                    objs.forEach(lang.hitch(this, function(obj){
+                        var data = JSON.parse(obj.data);
+                        data.id_list.genome_id.forEach(lang.hitch(this, function(d){
+                            if(!this.genomeIdHash.hasOwnProperty(d)){
+                                this.genomeIdHash[d] = true;
+                            }
+                        }));
+                    }));
+                    this.finishedGroup();
+                }));
+            }
 
 
 
 			//console.log("compGenomeList = " + compGenomeList);
 			//console.log("ref genome = " + values["ref_genome_id"]);
 
-			if(userGenomes.length > 0){
-				this.final_gids += userGenomes;
-			}
+			//if(userGenomes.length > 0){
+			//	this.final_gids += userGenomes;
+			//}
 
 			/*if(featureGroups.length > 0){
 				seqcomp_values["user_feature_groups"] = featureGroups;
@@ -314,7 +320,6 @@ define([
 				refIndex = genomeIds.length + userGenomes.length + 1;
 			}*/
 
-			return 0;
 		},
 
 		onAddGenome: function(){
@@ -346,6 +351,7 @@ define([
 					handle.remove();
 				}));
 				this.increaseGenome();
+                this.getGListValues();
 			}
 			//console.log(lrec);
 		},
@@ -372,8 +378,11 @@ define([
 
         checkSubmit: function(){
             if (this.groupsRemaining == 0 && this.submission){
-                this.requestGraph();
+			    console.log("call to constructGraph");
+                //this.requestGraph();
+                return true;
             }
+            return false;
         },
 
 		requestGraph: function(){

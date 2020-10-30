@@ -3,15 +3,20 @@
         <div class="appTemplate">
             <div class="appTitle">
                 <span class="breadcrumb">Services</span>
-                <h3>Pan-genome Graphs</h3>
-                <p>Create a pan-genome graph from selected genomes or groups. <br>WARNING: Be mindful of how many completely unrelated genomes you put in (4 at most).
-                <br>Think of doing an MSA of unrelated sequences (not very informative). <br>e.g. 10 unrelated genomes x ~ 4,000 genes = 40,000 seperate nodes (will probably break your browser).
+                <h3>Synteny Graphs</h3>
+                <p>Create a syteny graph from selected genomes or groups. <br>WARNING: This is an approximate whole genome multiple sequence alignment.
+                <br>Dissimilar genomes will produce large graphs e.g. 10 unrelated genomes x ~ 4,000 genes = 40,000 seperate nodes (will probably break your browser).
                 <br>The more closely related the genomes the more you can put in. e.g. 400 well conserved Brucella.
                 </p>
             </div>
+        <div class="formFieldsContainer">
             <div style="display: none;">
-                <input data-dojo-type="dijit/form/NumberTextBox" value="0" required="false"
+                <input data-dojo-type="dijit/form/NumberTextBox" value="0" required="true"
                         data-dojo-attach-point="numgenomes" data-dojo-props="constraints:{min:1,max:500},"/>
+            </div>
+            <div style="display: none;">
+                <input data-dojo-type="dijit/form/NumberTextBox" value="1" required="true"
+                        data-dojo-attach-point="workinggroup" data-dojo-props="constraints:{min:1,max:500},"/>
             </div>
             <div style="margin-top:10px" class="appBox appShadow">
                 <div class="headerrow">
@@ -22,6 +27,14 @@
                         </div>
                     </div>
                 </div>
+              <div class="appRow">
+                <label class="paramlabel">Output Folder</label><br>
+                <div data-dojo-type="p3/widget/WorkspaceObjectSelector" name="output_path" data-dojo-attach-point="output_path" style="width:300px" required="true" data-dojo-props="title:'Select an Output Folder',autoSelectCurrent:true,selectionText:'Destination',type:['folder'],multi:false" data-dojo-attach-event="onChange:onOutputPathChange"></div>
+              </div>
+              <div class="appRow">
+                <label class="paramlabel">Output Name</label><span class="charError" style="color:red; font-size:8pt; padding-left:10px; font-weight:bold">&nbsp;</span><br>
+                <div data-dojo-type="p3/widget/WorkspaceFilenameValidationTextBox" data-dojo-attach-event="onChange:checkOutputName" name="output_file" data-dojo-attach-point="output_file" style="width:300px" required="true" data-dojo-props="intermediateChanges:true,missingMessage:'Name must be provided for the job result',trim:true,placeHolder:'Output Name'"></div>
+              </div>
                 <div class="appRow">
                     <div class="appRowSegment" style="text-align:left;margin:0 0 0 0">
                             <label class="paramlabel">Color by</label><br>
@@ -98,22 +111,23 @@
                 </div>
 
             </div>
+        </div>
 
             <div class="appSubmissionArea">
                 <div data-dojo-attach-point="workingMessage" class="messageContainer workingMessage" style="margin-top:10px; text-align:center;">
-                    Submitting Annotation Job
+                    Submitting Job
                 </div>
                 <div data-dojo-attach-point="errorMessage" class="messageContainer errorMessage" style="margin-top:10px; text-align:center;">
                     Error Submitting Job
                 </div>
                 <div data-dojo-attach-point="submittedMessage" class="messageContainer submittedMessage" style="margin-top:10px; text-align:center;">
-                    Annotation Job has been queued.
+                    Job has been queued.
                 </div>
                 <div style="margin-top: 10px; text-align:center;">
                     <div data-dojo-attach-point="cancelButton" data-dojo-attach-event="onClick:onCancel" data-dojo-type="dijit/form/Button">Cancel
                     </div>
                     <div data-dojo-attach-point="resetButton" type="reset" data-dojo-type="dijit/form/Button">Reset</div>
-                    <div data-dojo-attach-point="submitButton" type="submit" data-dojo-type="dijit/form/Button">Annotate</div>
+                    <div data-dojo-attach-point="submitButton" type="submit" data-dojo-type="dijit/form/Button">Submit</div>
                 </div>
             </div>
         </div>
