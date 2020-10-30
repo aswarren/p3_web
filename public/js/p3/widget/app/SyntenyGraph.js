@@ -254,8 +254,8 @@ define([
 
         getValues:function(){
 			cur_values = this.inherited(arguments);
-            cur_values["gids"]=[];
-            Object.keys(this.genomeIdHash).forEach(lang.hitch(this, function(v){cur_values.gids.push(v)}));
+            cur_values["genome_ids"]=[];
+            Object.keys(this.genomeIdHash).forEach(lang.hitch(this, function(v){cur_values.genome_ids.push(v)}));
             return cur_values;
         },
 
